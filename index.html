@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shift Keeper</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14161c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Shift Keeper">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#14161c;--card:#1e222b;--text:#eef1f6;--sub:#9aa3b2;--ok:#3ecf8e;--warn:#f5a623;--bad:#ff5c5c;--acc:#5b8cff;--line:#2a303c}
+*{box-sizing:border-box}
+body{margin:0;padding:16px;background:var(--bg);color:var(--text);font-family:system-ui,"Noto Sans",sans-serif;max-width:480px;margin:auto;font-size:16px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+h1{font-size:20px;margin:0}
+.card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px}
+.notice{background:#2a2518;color:#f5d98a;border-radius:10px;padding:10px;font-size:13px;margin-bottom:12px}
+.row{display:flex;gap:8px;margin-bottom:8px}
+input[type=text],input[type=date],input[type=time],input[type=number]{flex:1;min-width:0;padding:12px;border-radius:10px;border:1px solid #333a47;background:#14161c;color:var(--text);font-size:16px}
+button{padding:12px 14px;border:0;border-radius:10px;background:var(--acc);color:#fff;font-size:16px}
+button.sec{background:#333a47}
+button.ghost{background:transparent;color:var(--sub);padding:8px 10px}
+button.wide{width:100%}
+.big{font-size:26px;font-weight:700}
+.tk{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.tk input[type=checkbox]{width:24px;height:24px;flex:none}
+.tk span{flex:1}.tk.dn span{text-decoration:line-through;color:var(--sub)}
+.brow{display:flex;justify-content:space-between;align-items:baseline}
+.lft{font-size:18px;font-weight:600;color:var(--ok)}
+.bar{height:8px;border-radius:4px;background:#333a47;margin-top:6px;overflow:hidden}
+.bar>div{height:100%;background:var(--ok)}
+.hint{color:var(--sub);font-size:13px}
+.day{display:flex;gap:10px;padding:8px;border-radius:10px;background:#14161c;margin-bottom:6px;border:1px solid transparent}
+.day{cursor:pointer}
+.rd{color:var(--bad)}
+.tin{text-align:center;letter-spacing:1px}
+.weekScroll{position:relative;max-height:340px;overflow-y:auto;padding-right:2px}
+.day.flash{animation:fl 1.8s ease-out}
+@keyframes fl{0%{background:#2c4a86}100%{background:#14161c}}
+.offOn{color:var(--ok);font-weight:700}
+.tree{background:transparent;border:0;padding:4px 8px;font-size:20px;opacity:.45;align-self:center;flex:none}
+.tree.on{opacity:1;background:#1c3a2c}
+.pen{color:var(--sub);align-self:center;flex:none}
+.day.offDay{border-color:var(--ok)}
+.day.tmr{border-color:var(--acc)}
+.day.red{border-color:var(--bad);background:#2a1a1d}
+.dd{width:66px;text-align:center;flex:none}
+.ds{flex:1}
+.off{color:var(--sub);font-weight:700}
+.cx{text-decoration:line-through;color:var(--sub)}
+.shift{padding:10px 0;border-top:1px solid var(--line)}
+.shift:first-child{border-top:0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.right{display:flex;align-items:center;gap:4px}
+.over{color:var(--bad)}
+.menu{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.menu button{background:#333a47;padding:8px 10px;font-size:14px}
+.doneBtn{background:var(--ok);color:#0b1a12;font-weight:700;margin-top:4px}
+.menu button.d{background:#4a2227}
+summary{cursor:pointer;color:var(--sub);font-size:14px}
+label{font-size:15px}
+.msg{font-size:14px;color:var(--ok);min-height:20px;margin-top:8px}
+.msg.err{color:var(--bad)}
+.overlay{position:fixed;inset:0;background:var(--bg);overflow:auto;padding:16px;z-index:10;display:none}
+.overlay.show{display:block}
+.overlay .in{max-width:480px;margin:auto}
+.days{display:flex;flex-wrap:wrap;gap:6px}
+.days button{flex:1 0 20%;padding:10px 4px;background:#333a47}
+.days button.on{background:var(--acc)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.grid button{background:#333a47;padding:14px 8px}
+.grid button.on{background:var(--acc)}
+.modeBtn{display:block;width:100%;text-align:left;background:#333a47;margin-bottom:10px;padding:16px}
+.modeBtn.on{background:var(--acc)}
+.modeBtn small{display:block;opacity:.8;margin-top:4px}
+h2{font-size:16px;margin:16px 0 8px;color:var(--sub);font-weight:600}
+body{padding-bottom:96px}
+textarea{width:100%;min-height:200px;padding:12px;border-radius:10px;border:1px solid #333a47;background:#14161c;color:var(--text);font-size:16px;font-family:inherit;resize:vertical}
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border-top:1px solid var(--line);display:flex;z-index:5;padding-bottom:env(safe-area-inset-bottom)}
+.tabbar button{flex:1;background:transparent;color:var(--sub);border-radius:0;padding:10px 4px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabbar button.on{color:var(--acc);font-weight:700}
+.tbi{font-size:20px;line-height:1}
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="hdrTitle">Shift Keeper</h1>
+  <button class="ghost" id="btnSettings" aria-label="settings">⚙</button>
+</header>
+<div id="tabShifts">
+<div class="card">
+  <div class="hint" id="weekTitle" style="margin-bottom:6px"></div>
+  <div id="week"><div id="weekToday"></div><div id="weekScroll" class="weekScroll"></div></div>
+</div>
+
+<div class="card" id="counterCard">
+  <label><input type="checkbox" id="vac"> <span id="vacLbl"></span></label>
+  <div class="hint" id="limitText" style="margin:4px 0 10px"></div>
+  <div class="hint" id="last7Lbl"></div>
+  <div class="brow"><div class="big" id="past">0h</div><div class="lft" id="pastLeft"></div></div>
+  <div class="bar"><div id="pastBar" style="width:0"></div></div>
+  <div class="hint" id="next7Lbl" style="margin-top:10px"></div>
+  <div class="brow"><div class="big" id="next">0h</div><div class="lft" id="nextLeft"></div></div>
+  <div class="bar"><div id="nextBar" style="width:0"></div></div>
+  <div class="hint" id="rollWarn" style="color:var(--bad);margin-top:10px"></div>
+  <details style="margin-top:12px">
+    <summary id="pastSum"></summary>
+    <div class="row" style="margin-top:8px"><input type="date" id="pDate"><input type="number" id="pHours" step="0.5" min="0" max="24" placeholder="h"></div>
+    <button id="pBtn" class="sec wide">+</button>
+  </details>
+</div>
+
+<div class="card" id="addCard" style="display:none">
+  <div class="row"><input type="text" id="job" list="jobs"><datalist id="jobs"></datalist></div>
+  <div class="row"><input type="date" id="date"><button class="sec" id="skipDay"></button></div>
+  <div class="row"><input type="text" inputmode="numeric" class="tin" maxlength="5" autocomplete="off" placeholder="18:00" id="start"><input type="text" inputmode="numeric" class="tin" maxlength="5" autocomplete="off" placeholder="18:00" id="end"></div>
+  <button class="ghost" id="secondBtn" style="padding-left:0"></button>
+  <div id="secondBox" style="display:none">
+    <div class="row"><input type="text" id="job2" list="jobs"></div>
+    <div class="row"><input type="text" inputmode="numeric" class="tin" maxlength="5" autocomplete="off" placeholder="18:00" id="start2"><input type="text" inputmode="numeric" class="tin" maxlength="5" autocomplete="off" placeholder="18:00" id="end2"></div>
+  </div>
+  <div class="row" style="margin-bottom:0">
+    <button id="addBtn" style="flex:1"></button>
+    <button id="cancelEdit" class="sec" style="display:none">✕</button>
+  </div>
+  <div class="msg" id="msg"></div>
+</div>
+
+</div>
+<div id="tabLog" style="display:none">
+<h2 id="logTitle" style="margin:16px 0 8px"></h2>
+<div class="card" id="list"></div>
+</div>
+<div id="tabSpecial" style="display:none">
+  <h2 id="apHead"></h2>
+  <div class="card">
+    <div class="row"><input type="text" id="apName" autocomplete="off"></div>
+    <div class="row"><input type="date" id="apDate"><input type="text" inputmode="numeric" class="tin" maxlength="5" autocomplete="off" placeholder="18:00" id="apTime"></div>
+    <div class="row"><input type="text" id="apNote" autocomplete="off"></div>
+    <div class="row" style="margin-bottom:0"><button id="apAddBtn" style="flex:1"></button><button id="apCancel" class="sec" style="display:none">✕</button></div>
+    <div class="msg" id="apMsg"></div>
+  </div>
+  <div class="card" id="apList"></div>
+  <h2 id="npHead"></h2>
+  <div class="card"><textarea id="notepad"></textarea></div>
+</div>
+<div id="tabTasks" style="display:none">
+  <h2 id="tkHead"></h2>
+  <div class="card">
+    <div class="row"><input type="text" id="tkIn" autocomplete="off"><button id="tkAdd">+</button></div>
+    <div id="tkList"></div>
+    <button class="sec wide" id="tkReset" style="margin-top:10px"></button>
+  </div>
+</div>
+<nav class="tabbar">
+  <button data-tab="shifts" class="on"><span class="tbi">📅</span><span id="tabLblShifts"></span></button>
+  <button data-tab="log"><span class="tbi">📋</span><span id="tabLblLog"></span></button>
+  <button data-tab="tasks"><span class="tbi">✅</span><span id="tabLblTasks"></span></button>
+  <button data-tab="special"><span class="tbi">★</span><span id="tabLblSpecial"></span></button>
+</nav>
+
+<div class="overlay" id="daySheet"><div class="in" id="dayIn"></div></div>
+<div class="overlay" id="settings"><div class="in" id="settingsIn"></div></div>
+<div class="overlay" id="setup"><div class="in" id="setupIn"></div></div>
+
+<script>
+var LANGS=[["ja","日本語","ja"],["ja2","やさしい日本語","ja"],["en","English","en"],["bn","বাংলা","bn"],["hi","हिन्दी","hi"],["ne","नेपाली","ne"],["vi","Tiếng Việt","vi"],["my","မြန်မာ","my"],["mn","Монгол","mn"],["zh","简体中文","zh-CN"],["si","සිංහල","si"],["pt","Português","pt"]];
+
+var T={
+en:{title:"Shift Keeper",lang:"Language",mode:"Mode",student:"Student",studentD:"Count hours (28h / 40h)",normal:"Normal",normalD:"No hour limit",add:"Add shift",job:"Job",start:"Start",end:"End",second:"+ 2nd job",added:"Added",off:"OFF",dayoff:"Day off",done:"Done",hasShift:"This day already has a shift. Tap the day above to edit or cancel it.",thisWeek:"This week",nextWeek:"Next week",weekStart:"Week starts on",rolling:"⚠ Over the limit in some 7 days in a row",log:"Work log",special:"Special",appts:"Appointments",apAdd:"Add appointment",apTitle:"Title",apNote:"Note (optional)",apFill:"Enter a title and a date.",notepad:"Notepad",notePh:"Write notes here...",apEmpty:"No appointments yet",tabShifts:"Shifts",tkTab:"Tasks",tkPh:"Add item (e.g. apron)",tkReset:"Uncheck all",tkEmpty:"Nothing yet",instApp:"Install app",instIos:"iPhone: tap Share, then “Add to Home Screen”",today:"today",tomorrow:"tomorrow",week:"Next 7 days",last7:"Last 7 days",next7:"Next 7 days",left:"left",over:"over",vac:"Long vacation (40h)",settings:"Settings",clear:"Delete all data",clearQ:"Delete everything?",edit:"Edit",cancelShift:"Cancel shift",actual:"Actual time",cal:"Calendar",del:"Delete",save:"Save",notice:"Only the hours you enter are counted. Your real total is your responsibility.",empty:"No shifts yet",remind:"Reminders (30 min before)",actualPrompt:"Actual time, e.g. 09:00-17:30",fill:"Fill in start and end.",pastHours:"Add past hours",local:"Data stays only on this phone.",ok:"OK"},
+ja:{title:"シフトキーパー",lang:"言語",mode:"モード",student:"学生",studentD:"時間をカウント(28時間/40時間)",normal:"通常",normalD:"時間制限なし",add:"シフトを追加",job:"仕事",start:"開始",end:"終了",second:"+ 2つ目の仕事",added:"追加しました",off:"休み",dayoff:"休み",done:"完了",hasShift:"この日はすでにシフトがあります。上の日をタップして編集か取消をしてください。",thisWeek:"今週",nextWeek:"来週",weekStart:"週の始まり",rolling:"⚠ 連続する7日間で上限を超えている日があります",log:"作業ログ",special:"特別",appts:"予定",apAdd:"予定を追加",apTitle:"タイトル",apNote:"メモ(任意)",apFill:"タイトルと日付を入力してください。",notepad:"メモ帳",notePh:"ここにメモを書く…",apEmpty:"予定はまだありません",tabShifts:"シフト",tkTab:"タスク",tkPh:"持ち物を追加(例:エプロン)",tkReset:"すべてチェック解除",tkEmpty:"まだありません",instApp:"アプリをインストール",instIos:"iPhone:共有 →「ホーム画面に追加」",today:"今日",tomorrow:"明日",week:"今後7日間",last7:"過去7日間",next7:"今後7日間",left:"残り",over:"超過",vac:"長期休暇(40時間)",settings:"設定",clear:"すべてのデータを削除",clearQ:"すべて削除しますか?",edit:"編集",cancelShift:"シフトを取消",actual:"実際の時間",cal:"カレンダー",del:"削除",save:"保存",notice:"入力した時間だけが計算されます。実際の合計は自分で確認してください。",empty:"シフトはまだありません",remind:"30分前に通知",actualPrompt:"実際の時間(例 09:00-17:30)",fill:"開始・終了を入力してください。",pastHours:"過去の時間を追加",local:"データはこの端末にだけ保存されます。",ok:"OK"},
+ja2:{title:"シフト",lang:"ことば",mode:"モード",student:"がくせい",studentD:"じかんを かぞえる(28じかん/40じかん)",normal:"ふつう",normalD:"じかんの せいげん なし",add:"シフトを いれる",job:"しごと",start:"はじまり",end:"おわり",second:"+ 2つめの しごと",added:"いれました",off:"やすみ",dayoff:"やすみ",done:"おわり",hasShift:"この ひは もう シフトが あります。うえの ひを タップして なおすか やめて ください。",thisWeek:"こんしゅう",nextWeek:"らいしゅう",weekStart:"しゅうの はじまり",rolling:"⚠ つづく 7にちで じかんが こえて います",log:"しごとの きろく",special:"とくべつ",appts:"よてい",apAdd:"よていを いれる",apTitle:"なまえ",apNote:"メモ(なくても いい)",apFill:"なまえと ひにちを いれて ください。",notepad:"メモちょう",notePh:"ここに メモを かく…",apEmpty:"よていは まだ ありません",tabShifts:"シフト",tkTab:"やること",tkPh:"もちものを いれる(れい:エプロン)",tkReset:"ぜんぶ チェックを はずす",tkEmpty:"まだ ありません",instApp:"アプリを いれる",instIos:"iPhone:「きょうゆう」→「ホームがめんに ついか」",today:"きょう",tomorrow:"あした",week:"これからの 7にち",last7:"まえの 7にち",next7:"これからの 7にち",left:"のこり",over:"こえた",vac:"ながい やすみ(40じかん)",settings:"せってい",clear:"ぜんぶ けす",clearQ:"ぜんぶ けしますか?",edit:"なおす",cancelShift:"シフトを やめる",actual:"ほんとうの じかん",cal:"カレンダー",del:"けす",save:"ほぞん",notice:"いれた じかんだけ かぞえます。ほんとうの ごうけいは じぶんで たしかめて ください。",empty:"シフトは まだ ありません",remind:"30ぷんまえに しらせる",actualPrompt:"ほんとうの じかん(れい 09:00-17:30)",fill:"はじまり・おわりを いれて ください。",pastHours:"まえの じかんを いれる",local:"データは この スマホだけに ほぞんされます。",ok:"OK"},
+bn:{title:"শিফট কিপার",lang:"ভাষা",mode:"মোড",student:"ছাত্র",studentD:"ঘণ্টা গণনা (২৮/৪০ ঘণ্টা)",normal:"সাধারণ",normalD:"ঘণ্টার সীমা নেই",add:"শিফট যোগ করুন",job:"কাজ",start:"শুরু",end:"শেষ",second:"+ ২য় কাজ",added:"যোগ হয়েছে",off:"ছুটি",dayoff:"ছুটি",done:"সম্পন্ন",hasShift:"এই দিনে আগেই শিফট আছে। উপরের দিনে ট্যাপ করে বদলান বা বাতিল করুন।",thisWeek:"এই সপ্তাহ",nextWeek:"পরের সপ্তাহ",weekStart:"সপ্তাহ শুরু",rolling:"⚠ পরপর ৭ দিনে সীমা ছাড়িয়েছে",log:"কাজের লগ",special:"বিশেষ",appts:"অ্যাপয়েন্টমেন্ট",apAdd:"অ্যাপয়েন্টমেন্ট যোগ করুন",apTitle:"শিরোনাম",apNote:"নোট (ঐচ্ছিক)",apFill:"শিরোনাম ও তারিখ লিখুন।",notepad:"নোটপ্যাড",notePh:"এখানে নোট লিখুন…",apEmpty:"এখনও কোনো অ্যাপয়েন্টমেন্ট নেই",tabShifts:"শিফট",tkTab:"টাস্ক",tkPh:"আইটেম যোগ করুন (যেমন অ্যাপ্রন)",tkReset:"সব আনচেক করুন",tkEmpty:"এখনও কিছু নেই",instApp:"অ্যাপ ইনস্টল করুন",instIos:"iPhone: Share চাপুন, তারপর “Add to Home Screen”",today:"আজ",tomorrow:"আগামীকাল",week:"পরের ৭ দিন",last7:"গত ৭ দিন",next7:"পরের ৭ দিন",left:"বাকি",over:"বেশি",vac:"লম্বা ছুটি (৪০ ঘণ্টা)",settings:"সেটিংস",clear:"সব ডেটা মুছুন",clearQ:"সব মুছে ফেলবেন?",edit:"সম্পাদনা",cancelShift:"শিফট বাতিল",actual:"আসল সময়",cal:"ক্যালেন্ডার",del:"মুছুন",save:"সংরক্ষণ",notice:"শুধু আপনার দেওয়া ঘণ্টা গণনা হয়। আসল মোট ঘণ্টা আপনার নিজের দায়িত্ব।",empty:"এখনও কোনো শিফট নেই",remind:"৩০ মিনিট আগে মনে করিয়ে দিন",actualPrompt:"আসল সময়, যেমন 09:00-17:30",fill:"শুরু ও শেষ লিখুন।",pastHours:"আগের ঘণ্টা যোগ করুন",local:"ডেটা শুধু এই ফোনে থাকে।",ok:"OK"},
+hi:{title:"शिफ्ट कीपर",lang:"भाषा",mode:"मोड",student:"छात्र",studentD:"घंटे गिनें (28/40 घंटे)",normal:"सामान्य",normalD:"घंटों की सीमा नहीं",add:"शिफ्ट जोड़ें",job:"काम",start:"शुरू",end:"खत्म",second:"+ दूसरा काम",added:"जोड़ दिया",off:"छुट्टी",dayoff:"छुट्टी",done:"हो गया",hasShift:"इस दिन पहले से शिफ्ट है। ऊपर दिन पर टैप करके बदलें या रद्द करें।",thisWeek:"इस हफ्ते",nextWeek:"अगला हफ्ता",weekStart:"हफ्ता शुरू",rolling:"⚠ लगातार 7 दिनों में सीमा पार हो गई",log:"काम का लॉग",special:"खास",appts:"अपॉइंटमेंट",apAdd:"अपॉइंटमेंट जोड़ें",apTitle:"शीर्षक",apNote:"नोट (वैकल्पिक)",apFill:"शीर्षक और तारीख भरें।",notepad:"नोटपैड",notePh:"यहाँ नोट लिखें…",apEmpty:"अभी कोई अपॉइंटमेंट नहीं",tabShifts:"शिफ्ट",tkTab:"कार्य",tkPh:"आइटम जोड़ें (जैसे एप्रन)",tkReset:"सब अनचेक करें",tkEmpty:"अभी कुछ नहीं",instApp:"ऐप इंस्टॉल करें",instIos:"iPhone: Share दबाएँ, फिर “Add to Home Screen”",today:"आज",tomorrow:"कल",week:"अगले 7 दिन",last7:"पिछले 7 दिन",next7:"अगले 7 दिन",left:"बाकी",over:"ज़्यादा",vac:"लंबी छुट्टी (40 घंटे)",settings:"सेटिंग",clear:"सारा डेटा मिटाएँ",clearQ:"सब कुछ मिटाएँ?",edit:"बदलें",cancelShift:"शिफ्ट रद्द करें",actual:"असली समय",cal:"कैलेंडर",del:"हटाएँ",save:"सेव करें",notice:"सिर्फ़ आपके डाले गए घंटे गिने जाते हैं। असली कुल घंटे आपकी अपनी ज़िम्मेदारी हैं।",empty:"अभी कोई शिफ्ट नहीं",remind:"30 मिनट पहले याद दिलाएँ",actualPrompt:"असली समय, जैसे 09:00-17:30",fill:"शुरू और खत्म भरें।",pastHours:"पिछले घंटे जोड़ें",local:"डेटा सिर्फ़ इसी फ़ोन में रहता है।",ok:"OK"},
+ne:{title:"सिफ्ट किपर",lang:"भाषा",mode:"मोड",student:"विद्यार्थी",studentD:"घण्टा गन्ती (२८/४० घण्टा)",normal:"सामान्य",normalD:"घण्टाको सीमा छैन",add:"सिफ्ट थप्नुहोस्",job:"काम",start:"सुरु",end:"अन्त्य",second:"+ दोस्रो काम",added:"थपियो",off:"बिदा",dayoff:"बिदा",done:"सकियो",hasShift:"यो दिन पहिल्यै सिफ्ट छ। माथिको दिनमा ट्याप गरेर बदल्नुहोस् वा रद्द गर्नुहोस्।",thisWeek:"यो हप्ता",nextWeek:"अर्को हप्ता",weekStart:"हप्ता सुरु",rolling:"⚠ लगातार ७ दिनमा सीमा नाघेको छ",log:"कामको लग",special:"विशेष",appts:"अपोइन्टमेन्ट",apAdd:"अपोइन्टमेन्ट थप्नुहोस्",apTitle:"शीर्षक",apNote:"नोट (ऐच्छिक)",apFill:"शीर्षक र मिति भर्नुहोस्।",notepad:"नोटप्याड",notePh:"यहाँ नोट लेख्नुहोस्…",apEmpty:"अहिलेसम्म कुनै अपोइन्टमेन्ट छैन",tabShifts:"सिफ्ट",tkTab:"कार्य",tkPh:"वस्तु थप्नुहोस् (जस्तै एप्रोन)",tkReset:"सबै अनचेक गर्नुहोस्",tkEmpty:"अहिलेसम्म केही छैन",instApp:"एप इन्स्टल गर्नुहोस्",instIos:"iPhone: Share थिच्नुहोस्, अनि “Add to Home Screen”",today:"आज",tomorrow:"भोलि",week:"अर्को ७ दिन",last7:"पछिल्ला ७ दिन",next7:"अर्को ७ दिन",left:"बाँकी",over:"बढी",vac:"लामो बिदा (४० घण्टा)",settings:"सेटिङ",clear:"सबै डेटा मेट्नुहोस्",clearQ:"सबै मेट्ने?",edit:"सम्पादन",cancelShift:"सिफ्ट रद्द",actual:"वास्तविक समय",cal:"क्यालेन्डर",del:"मेट्नुहोस्",save:"सेभ",notice:"तपाईंले हालेको घण्टा मात्र गनिन्छ। वास्तविक जम्मा घण्टा तपाईंकै जिम्मा हो।",empty:"अहिलेसम्म कुनै सिफ्ट छैन",remind:"३० मिनेट अगाडि सम्झाउनुहोस्",actualPrompt:"वास्तविक समय, जस्तै 09:00-17:30",fill:"सुरु र अन्त्य भर्नुहोस्।",pastHours:"अघिल्ला घण्टा थप्नुहोस्",local:"डेटा यही फोनमा मात्र रहन्छ।",ok:"OK"},
+vi:{title:"Quản lý ca làm",lang:"Ngôn ngữ",mode:"Chế độ",student:"Sinh viên",studentD:"Đếm giờ (28/40 giờ)",normal:"Thường",normalD:"Không giới hạn giờ",add:"Thêm ca",job:"Công việc",start:"Bắt đầu",end:"Kết thúc",second:"+ Việc thứ 2",added:"Đã thêm",off:"NGHỈ",dayoff:"Nghỉ",done:"Xong",hasShift:"Ngày này đã có ca. Chạm vào ngày ở trên để sửa hoặc hủy.",thisWeek:"Tuần này",nextWeek:"Tuần sau",weekStart:"Tuần bắt đầu",rolling:"⚠ Có 7 ngày liên tiếp vượt giới hạn",log:"Nhật ký làm việc",special:"Đặc biệt",appts:"Lịch hẹn",apAdd:"Thêm lịch hẹn",apTitle:"Tiêu đề",apNote:"Ghi chú (tùy chọn)",apFill:"Nhập tiêu đề và ngày.",notepad:"Ghi chú",notePh:"Viết ghi chú ở đây…",apEmpty:"Chưa có lịch hẹn",tabShifts:"Ca làm",tkTab:"Việc cần làm",tkPh:"Thêm mục (vd: tạp dề)",tkReset:"Bỏ chọn tất cả",tkEmpty:"Chưa có gì",instApp:"Cài ứng dụng",instIos:"iPhone: nhấn Chia sẻ rồi “Thêm vào Màn hình chính”",today:"hôm nay",tomorrow:"ngày mai",week:"7 ngày tới",last7:"7 ngày qua",next7:"7 ngày tới",left:"còn lại",over:"vượt",vac:"Nghỉ dài (40 giờ)",settings:"Cài đặt",clear:"Xóa mọi dữ liệu",clearQ:"Xóa tất cả?",edit:"Sửa",cancelShift:"Hủy ca",actual:"Giờ thực tế",cal:"Lịch",del:"Xóa",save:"Lưu",notice:"Chỉ tính số giờ bạn nhập. Tổng giờ thực tế do bạn tự chịu trách nhiệm.",empty:"Chưa có ca nào",remind:"Nhắc trước 30 phút",actualPrompt:"Giờ thực tế, ví dụ 09:00-17:30",fill:"Nhập giờ bắt đầu và kết thúc.",pastHours:"Thêm giờ đã làm",local:"Dữ liệu chỉ nằm trên điện thoại này.",ok:"OK"},
+my:{title:"Shift Keeper",lang:"ဘာသာစကား",mode:"မုဒ်",student:"ကျောင်းသား",studentD:"နာရီရေတွက် (၂၈/၄၀ နာရီ)",normal:"ပုံမှန်",normalD:"နာရီကန့်သတ်မရှိ",add:"အလုပ်ချိန်ထည့်ပါ",job:"အလုပ်",start:"စတင်",end:"ပြီးဆုံး",second:"+ ဒုတိယအလုပ်",added:"ထည့်ပြီး",off:"နားရက်",dayoff:"နားရက်",done:"ပြီးပြီ",hasShift:"ဤနေ့တွင် အလုပ်ချိန်ရှိပြီးဖြစ်သည်။ အပေါ်ရှိ နေ့ကိုနှိပ်၍ ပြင်ပါ သို့မဟုတ် ပယ်ဖျက်ပါ။",thisWeek:"ဒီအပတ်",nextWeek:"နောက်အပတ်",weekStart:"အပတ်စတင်ရက်",rolling:"⚠ ဆက်တိုက် ၇ ရက်တွင် ကန့်သတ်ချက်ကျော်နေသည်",log:"အလုပ်မှတ်တမ်း",special:"အထူး",appts:"ရက်ချိန်း",apAdd:"ရက်ချိန်းထည့်ပါ",apTitle:"ခေါင်းစဉ်",apNote:"မှတ်ချက် (မဖြစ်မနေမဟုတ်)",apFill:"ခေါင်းစဉ်နှင့် ရက်စွဲ ထည့်ပါ။",notepad:"မှတ်စုစာအုပ်",notePh:"ဤနေရာတွင် မှတ်စုရေးပါ…",apEmpty:"ရက်ချိန်း မရှိသေးပါ",tabShifts:"အလုပ်ချိန်",tkTab:"လုပ်စရာများ",tkPh:"ပစ္စည်းထည့်ပါ (ဥပမာ - အက်ပရွန်)",tkReset:"အားလုံး အမှန်ခြစ်ဖြုတ်ပါ",tkEmpty:"မရှိသေးပါ",instApp:"အက်ပ် ထည့်သွင်းပါ",instIos:"iPhone: Share ကိုနှိပ်ပြီး “Add to Home Screen”",today:"ယနေ့",tomorrow:"မနက်ဖြန်",week:"လာမည့် ၇ ရက်",last7:"လွန်ခဲ့သော ၇ ရက်",next7:"လာမည့် ၇ ရက်",left:"ကျန်",over:"ကျော်",vac:"ရက်ရှည်ပိတ်ရက် (၄၀ နာရီ)",settings:"ဆက်တင်",clear:"ဒေတာအားလုံးဖျက်ပါ",clearQ:"အားလုံးဖျက်မလား?",edit:"ပြင်ပါ",cancelShift:"အလုပ်ချိန်ပယ်ဖျက်",actual:"အမှန်တကယ်အချိန်",cal:"ပြက္ခဒိန်",del:"ဖျက်ပါ",save:"သိမ်းပါ",notice:"သင်ထည့်သော နာရီများကိုသာ တွက်ပါသည်။ တကယ့်စုစုပေါင်းကို သင်ကိုယ်တိုင် တာဝန်ယူပါ။",empty:"အလုပ်ချိန် မရှိသေးပါ",remind:"၃၀ မိနစ်အလို သတိပေး",actualPrompt:"အမှန်တကယ်အချိန် ဥပမာ 09:00-17:30",fill:"စတင်ချိန်၊ ပြီးချိန် ထည့်ပါ။",pastHours:"ယခင်နာရီထည့်ပါ",local:"ဒေတာကို ဤဖုန်းထဲတွင်သာ သိမ်းထားသည်။",ok:"OK"},
+mn:{title:"Ээлж хөтлөгч",lang:"Хэл",mode:"Горим",student:"Оюутан",studentD:"Цаг тооцох (28/40 цаг)",normal:"Энгийн",normalD:"Цагийн хязгааргүй",add:"Ээлж нэмэх",job:"Ажил",start:"Эхлэх",end:"Дуусах",second:"+ 2-р ажил",added:"Нэмэгдлээ",off:"АМРАЛТ",dayoff:"Амралт",done:"Болсон",hasShift:"Энэ өдөр ээлж байна. Дээрх өдөр дээр дарж засах эсвэл цуцлаарай.",thisWeek:"Энэ долоо хоног",nextWeek:"Дараах долоо хоног",weekStart:"Долоо хоног эхлэх",rolling:"⚠ Дараалсан 7 өдрийн дотор хязгаараас хэтэрсэн",log:"Ажлын бүртгэл",special:"Тусгай",appts:"Уулзалт",apAdd:"Уулзалт нэмэх",apTitle:"Гарчиг",apNote:"Тэмдэглэл (заавал биш)",apFill:"Гарчиг болон огноог оруулна уу.",notepad:"Тэмдэглэлийн дэвтэр",notePh:"Энд тэмдэглэл бич…",apEmpty:"Уулзалт алга",tabShifts:"Ээлж",tkTab:"Даалгавар",tkPh:"Зүйл нэмэх (жш: хормогч)",tkReset:"Бүгдийг сонголтгүй болгох",tkEmpty:"Одоогоор алга",instApp:"Апп суулгах",instIos:"iPhone: Share дараад “Add to Home Screen”",today:"өнөөдөр",tomorrow:"маргааш",week:"Дараагийн 7 өдөр",last7:"Өнгөрсөн 7 өдөр",next7:"Дараагийн 7 өдөр",left:"үлдсэн",over:"хэтэрсэн",vac:"Урт амралт (40 цаг)",settings:"Тохиргоо",clear:"Бүх мэдээллийг устгах",clearQ:"Бүгдийг устгах уу?",edit:"Засах",cancelShift:"Ээлж цуцлах",actual:"Бодит цаг",cal:"Хуанли",del:"Устгах",save:"Хадгалах",notice:"Зөвхөн таны оруулсан цагийг тооцно. Бодит нийт цаг таны хариуцлага.",empty:"Ээлж алга",remind:"30 минутын өмнө сануулах",actualPrompt:"Бодит цаг, жишээ 09:00-17:30",fill:"Эхлэх, дуусах цагийг оруулна уу.",pastHours:"Өмнөх цаг нэмэх",local:"Мэдээлэл зөвхөн энэ утсанд хадгалагдана.",ok:"OK"},
+zh:{title:"排班助手",lang:"语言",mode:"模式",student:"留学生",studentD:"统计工时(28/40小时)",normal:"普通",normalD:"不限工时",add:"添加班次",job:"工作",start:"开始",end:"结束",second:"+ 第二份工作",added:"已添加",off:"休息",dayoff:"休息",done:"完成",hasShift:"这一天已有班次。请点上方的日期来修改或取消。",thisWeek:"本周",nextWeek:"下周",weekStart:"每周从",rolling:"⚠ 有连续7天的工时超出上限",log:"工作记录",special:"特别",appts:"预约",apAdd:"添加预约",apTitle:"标题",apNote:"备注(可选)",apFill:"请填写标题和日期。",notepad:"记事本",notePh:"在这里写笔记…",apEmpty:"还没有预约",tabShifts:"班次",tkTab:"待办",tkPh:"添加物品(如:围裙)",tkReset:"全部取消勾选",tkEmpty:"还没有内容",instApp:"安装应用",instIos:"iPhone:点分享,再点“添加到主屏幕”",today:"今天",tomorrow:"明天",week:"未来7天",last7:"过去7天",next7:"未来7天",left:"剩余",over:"超出",vac:"长假(40小时)",settings:"设置",clear:"删除所有数据",clearQ:"确定全部删除?",edit:"编辑",cancelShift:"取消班次",actual:"实际时间",cal:"日历",del:"删除",save:"保存",notice:"只统计你输入的工时。实际总工时请自己负责确认。",empty:"还没有班次",remind:"提前30分钟提醒",actualPrompt:"实际时间,例如 09:00-17:30",fill:"请填写开始和结束时间。",pastHours:"添加过去工时",local:"数据只保存在这部手机上。",ok:"OK"},
+si:{title:"ෂිෆ්ට් කීපර්",lang:"භාෂාව",mode:"ක්‍රමය",student:"ශිෂ්‍ය",studentD:"පැය ගණන් කරන්න (28/40 පැය)",normal:"සාමාන්‍ය",normalD:"පැය සීමාවක් නැත",add:"ෂිෆ්ට් එකතු කරන්න",job:"රැකියාව",start:"ආරම්භය",end:"අවසානය",second:"+ දෙවන රැකියාව",added:"එකතු කළා",off:"නිවාඩු",dayoff:"නිවාඩු",done:"අවසන්",hasShift:"මෙම දිනයට දැනටමත් ෂිෆ්ට් එකක් ඇත. ඉහත දිනය තට්ටු කර වෙනස් කරන්න හෝ අවලංගු කරන්න.",thisWeek:"මේ සතිය",nextWeek:"ඊළඟ සතිය",weekStart:"සතිය ආරම්භය",rolling:"⚠ අඛණ්ඩ දින 7ක් තුළ සීමාව ඉක්මවා ඇත",log:"වැඩ සටහන",special:"විශේෂ",appts:"හමුවීම්",apAdd:"හමුවීමක් එකතු කරන්න",apTitle:"මාතෘකාව",apNote:"සටහන (අත්‍යවශ්‍ය නැත)",apFill:"මාතෘකාව සහ දිනය ඇතුළත් කරන්න.",notepad:"සටහන් පොත",notePh:"මෙහි සටහන් ලියන්න…",apEmpty:"තවම හමුවීම් නැත",tabShifts:"ෂිෆ්ට්",tkTab:"කාර්ය",tkPh:"අයිතමයක් එක් කරන්න (උදා: ඇප්රොන්)",tkReset:"සියල්ල අන්ටික් කරන්න",tkEmpty:"තවම කිසිවක් නැත",instApp:"යෙදුම ස්ථාපනය කරන්න",instIos:"iPhone: Share ඔබා “Add to Home Screen”",today:"අද",tomorrow:"හෙට",week:"ඉදිරි දින 7",last7:"පසුගිය දින 7",next7:"ඉදිරි දින 7",left:"ඉතිරි",over:"වැඩි",vac:"දිගු නිවාඩු (පැය 40)",settings:"සැකසුම්",clear:"සියලු දත්ත මකන්න",clearQ:"සියල්ල මකන්නද?",edit:"සංස්කරණය",cancelShift:"ෂිෆ්ට් අවලංගු",actual:"සැබෑ වේලාව",cal:"දින දර්ශනය",del:"මකන්න",save:"සුරකින්න",notice:"ඔබ ඇතුළත් කළ පැය පමණක් ගණන් කෙරේ. සැබෑ මුළු පැය ගණන ඔබේම වගකීමකි.",empty:"තවම ෂිෆ්ට් නැත",remind:"විනාඩි 30කට කලින් මතක් කරන්න",actualPrompt:"සැබෑ වේලාව, උදා 09:00-17:30",fill:"ආරම්භය සහ අවසානය ඇතුළත් කරන්න.",pastHours:"පසුගිය පැය එකතු කරන්න",local:"දත්ත රැඳෙන්නේ මෙම දුරකථනයේ පමණි.",ok:"OK"},
+pt:{title:"Turnos",lang:"Idioma",mode:"Modo",student:"Estudante",studentD:"Contar horas (28/40 h)",normal:"Normal",normalD:"Sem limite de horas",add:"Adicionar turno",job:"Trabalho",start:"Início",end:"Fim",second:"+ 2º trabalho",added:"Adicionado",off:"FOLGA",dayoff:"Folga",done:"Concluído",hasShift:"Este dia já tem turno. Toque no dia acima para editar ou cancelar.",thisWeek:"Esta semana",nextWeek:"Próxima semana",weekStart:"Semana começa",rolling:"⚠ Limite excedido em 7 dias seguidos",log:"Registro de trabalho",special:"Especial",appts:"Compromissos",apAdd:"Adicionar compromisso",apTitle:"Título",apNote:"Nota (opcional)",apFill:"Digite um título e uma data.",notepad:"Bloco de notas",notePh:"Escreva suas notas aqui...",apEmpty:"Nenhum compromisso ainda",tabShifts:"Turnos",tkTab:"Tarefas",tkPh:"Adicionar item (ex.: avental)",tkReset:"Desmarcar tudo",tkEmpty:"Nada ainda",instApp:"Instalar app",instIos:"iPhone: toque em Compartilhar e “Adicionar à Tela de Início”",today:"hoje",tomorrow:"amanhã",week:"Próximos 7 dias",last7:"Últimos 7 dias",next7:"Próximos 7 dias",left:"restantes",over:"acima",vac:"Férias (40 h)",settings:"Configurações",clear:"Apagar todos os dados",clearQ:"Apagar tudo?",edit:"Editar",cancelShift:"Cancelar turno",actual:"Horário real",cal:"Calendário",del:"Apagar",save:"Salvar",notice:"Só contamos as horas que você digita. O total real é de sua responsabilidade.",empty:"Nenhum turno ainda",remind:"Lembrar 30 min antes",actualPrompt:"Horário real, ex.: 09:00-17:30",fill:"Preencha início e fim.",pastHours:"Adicionar horas passadas",local:"Os dados ficam só neste celular.",ok:"OK"}
+};
+
+var SKEY="shiftkeeper_v4";
+var S=loadState();
+var editId=null,openMenu=null,secondOpen=false,curTab="shifts",apEditId=null;
+
+function loadState(){
+  var d=null;
+  try{d=JSON.parse(localStorage.getItem(SKEY))}catch(e){}
+  if(!d){
+    d={lang:null,mode:null,vac:false,job1:"",job2:"",shifts:[],off:[],appts:[],notes:"",tasks:[],weekStart:1};
+    try{var old=JSON.parse(localStorage.getItem("shifts_v2"));if(old&&old.length){d.shifts=old;d.mode="student"}}catch(e){}
+    try{if(localStorage.getItem("vac_v1")==="1")d.vac=true}catch(e){}
+  }
+  if(!d.shifts)d.shifts=[];
+  if(!d.off)d.off=[];
+  if(!d.appts)d.appts=[];
+  if(!d.tasks)d.tasks=[];
+  if(d.notes==null)d.notes="";
+  if(d.weekStart==null)d.weekStart=1;
+  return d;
+}
+function save(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
+
+function $(id){return document.getElementById(id)}
+function t(k){var L=T[S.lang]||T.en;return L[k]!=null?L[k]:T.en[k]}
+function esc(x){return String(x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function pad(n){return String(n).padStart(2,"0")}
+function isStudent(){return S.mode==="student"}
+function limit(){return S.vac?40:28}
+function loc(){for(var i=0;i<LANGS.length;i++)if(LANGS[i][0]===S.lang)return LANGS[i][2];return "en"}
+
+function parseT(x){var p=x.split(":").map(Number);return p[0]*60+p[1]}
+function span(a,b){var m=parseT(b)-parseT(a);if(m<=0)m+=1440;return m/60}
+function hours(s){
+  if(s.cancelled)return 0;
+  if(s.fixed!=null)return s.fixed;
+  if(s.aStart&&s.aEnd)return span(s.aStart,s.aEnd);
+  return span(s.start,s.end);
+}
+function dayNum(str){return Math.floor(new Date(str+"T00:00:00Z")/86400000)}
+function dateOfDay(dn){return new Date(dn*86400000).toISOString().slice(0,10)}
+function todayStr(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function windowTotal(endDay){
+  return S.shifts.filter(function(s){var n=dayNum(s.date);return n<=endDay&&n>=endDay-6})
+    .reduce(function(a,s){return a+hours(s)},0);
+}
+function dayHours(dn){return S.shifts.filter(function(s){return dayNum(s.date)===dn}).reduce(function(a,s){return a+hours(s)},0)}
+function fmt(h){return (Math.round(h*10)/10)+"h"}
+function wd(dn){
+  try{return new Intl.DateTimeFormat(loc(),{weekday:"short",timeZone:"UTC"}).format(new Date(dn*86400000))}
+  catch(e){return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(dn*86400000).getUTCDay()]}
+}
+function md(dn){var d=new Date(dn*86400000);return (d.getUTCMonth()+1)+"/"+d.getUTCDate()}
+function dlabel(dateStr){var n=dayNum(dateStr);return wd(n)+" "+md(n)}
+function timeText(s){
+  if(s.fixed!=null)return "";
+  if(s.aStart&&s.aEnd)return "⏱ "+s.aStart+"-"+s.aEnd;
+  return s.start+"-"+s.end;
+}
+function jobName(s){return s.job||(s.slot===2?t("job")+" 2":t("job"))}
+function sortShifts(a,b){return (a.date+(a.start||"")).localeCompare(b.date+(b.start||""))}
+function msg(text,err){var m=$("msg");m.textContent=text||"";m.className="msg"+(err?" err":"")}
+
+function setBar(id,h){
+  var el=$(id),L=limit();
+  el.style.width=Math.min(100,h/L*100)+"%";
+  el.style.background=h>L?"var(--bad)":(h>=L-4?"var(--warn)":"var(--ok)");
+}
+function setLeft(id,h){
+  var el=$(id),l=limit()-h;
+  el.textContent=l>=0?fmt(l)+" "+t("left"):fmt(-l)+" "+t("over");
+  el.style.color=l>=0?"var(--ok)":"var(--bad)";
+}
+
+function renderLabels(){
+  document.documentElement.lang=loc();
+  $("hdrTitle").textContent=t("title");
+  document.title=t("title");
+  $("logTitle").textContent=t("log");
+  $("tabLblShifts").textContent=t("tabShifts");$("tabLblLog").textContent=t("log");$("tabLblSpecial").textContent=t("special");
+  $("tabLblTasks").textContent=t("tkTab");$("tkHead").textContent=t("tkTab");$("tkIn").placeholder=t("tkPh");$("tkReset").textContent=t("tkReset");
+  $("apHead").textContent=t("appts");$("npHead").textContent=t("notepad");
+  $("apName").placeholder=t("apTitle");$("apNote").placeholder=t("apNote");
+  $("apAddBtn").textContent=apEditId!==null?t("save"):t("apAdd");
+  $("notepad").placeholder=t("notePh");
+  $("vacLbl").textContent=t("vac");
+  $("pastSum").textContent=t("pastHours");
+  $("pBtn").textContent="+ "+t("add");
+  $("job").placeholder=t("job");
+  $("job2").placeholder=t("job")+" 2";
+  $("secondBtn").textContent=secondOpen?"− "+t("second").replace(/^\+\s*/,""):t("second");
+  $("addBtn").textContent=editId!==null?t("save"):t("add");
+  $("skipDay").textContent="🌴 "+t("dayoff");
+}
+
+var HCACHE={};
+function nthMon(y,m,n){var first=new Date(Date.UTC(y,m-1,1)).getUTCDay();return 1+((8-first)%7)+(n-1)*7}
+function jpHolidays(y){
+  if(HCACHE[y])return HCACHE[y];
+  var set={};
+  function add(m,d){set[Date.UTC(y,m-1,d)/86400000]=1}
+  add(1,1);add(1,nthMon(y,1,2));add(2,11);
+  if(y>=2020)add(2,23);
+  add(3,Math.floor(20.8431+0.242194*(y-1980)-Math.floor((y-1980)/4)));
+  add(4,29);add(5,3);add(5,4);add(5,5);
+  add(7,nthMon(y,7,3));
+  if(y>=2016)add(8,11);
+  add(9,nthMon(y,9,3));
+  add(9,Math.floor(23.2488+0.242194*(y-1980)-Math.floor((y-1980)/4)));
+  add(10,nthMon(y,10,2));
+  add(11,3);add(11,23);
+  var days=Object.keys(set).map(Number).sort(function(a,b){return a-b});
+  days.forEach(function(d){
+    if(new Date(d*86400000).getUTCDay()===0){var n=d+1;while(set[n])n++;set[n]=1}
+  });
+  Object.keys(set).map(Number).forEach(function(d){
+    var m=d+1;
+    if(set[m+1]&&!set[m]&&new Date(m*86400000).getUTCDay()!==0)set[m]=1;
+  });
+  HCACHE[y]=set;return set;
+}
+function isHoliday(dn){
+  var y=new Date(dn*86400000).getUTCFullYear();
+  if(S.hol&&S.holYears&&S.holYears.indexOf(y)>=0)return !!S.hol[dateOfDay(dn)];
+  return !!jpHolidays(y)[dn];
+}
+function isRedDay(dn){var d=new Date(dn*86400000).getUTCDay();return d===0||d===6||isHoliday(dn)}
+
+var flashDates=[],SHOWDAYS=60;
+function rowHtml(i,today){
+  var dn=today+i,ds=dateOfDay(dn),hol=isHoliday(dn),rd=isRedDay(dn);
+  var list=S.shifts.filter(function(s){return s.date===ds}).sort(sortShifts);
+  var work=list.some(function(s){return !s.cancelled});
+  var red=isStudent()&&work&&(windowTotal(dn)>limit()||(S.vac&&dayHours(dn)>8));
+  var tag=i===0?"<br><small>"+esc(t("today"))+"</small>":(i===1?"<br><small>"+esc(t("tomorrow"))+"</small>":"");
+  if(hol)tag+="<br><small>🎌</small>";
+  var h='<div class="day'+(i===1?" tmr":"")+(red?" red":"")+((!list.length&&isOff(ds))?" offDay":"")+(flashDates.indexOf(ds)>=0?" flash":"")+'" data-day="'+ds+'"><div class="dd'+(rd?" rd":"")+'"><b>'+esc(wd(dn))+"</b><br>"+md(dn)+tag+'</div><div class="ds">';
+  if(!list.length)h+=isOff(ds)?'<span class="offOn">✓ '+esc(t("off"))+"</span>":'<span class="off">'+esc(t("off"))+"</span>";
+  list.forEach(function(s){
+    var name=s.fixed!=null?t("pastHours"):jobName(s);
+    h+='<div class="'+(s.cancelled?"cx":"")+'">'+esc(name)+(s.fixed!=null?"":" · "+timeText(s))+"</div>";
+  });
+  S.appts.filter(function(a){return a.date===ds}).sort(function(a,b){return (a.time||"").localeCompare(b.time||"")}).forEach(function(a){
+    h+='<div>📌 '+(a.time?esc(a.time)+" ":"")+esc(a.title)+"</div>";
+  });
+  h+='</div>'+(hasWork(ds)?"":'<button class="tree'+(isOff(ds)?" on":"")+'" data-tree="'+ds+'" aria-label="'+esc(t("dayoff"))+'">🌴</button>')+'<div class="pen">✎</div></div>';
+  return h;
+}
+function renderWeek(){
+  var today=dayNum(todayStr()),td=new Date(today*86400000);
+  try{$("weekTitle").textContent=new Intl.DateTimeFormat(loc(),{year:"numeric",month:"long",timeZone:"UTC"}).format(td)}
+  catch(e){$("weekTitle").textContent=td.getUTCFullYear()+"/"+(td.getUTCMonth()+1)}
+  $("weekToday").innerHTML=rowHtml(0,today);
+  var sc=$("weekScroll"),keep=sc.scrollTop,html="";
+  for(var i=1;i<=SHOWDAYS;i++)html+=rowHtml(i,today);
+  sc.innerHTML=html;
+  var f=sc.querySelector(".flash");
+  sc.scrollTop=f?Math.max(0,f.offsetTop-60):keep;
+}
+
+function renderList(){
+  var sorted=S.shifts.slice().sort(sortShifts),html="";
+  sorted.forEach(function(s){
+    var dn=dayNum(s.date),isPast=s.fixed!=null;
+    var over=isStudent()&&!s.cancelled&&(windowTotal(dn)>limit()||(S.vac&&dayHours(dn)>8));
+    var name=isPast?t("pastHours"):jobName(s);
+    var hrs=isStudent()||isPast?fmt(s.cancelled?(isPast?s.fixed:span(s.start,s.end)):hours(s)):"";
+    html+='<div class="shift"><div class="top"><div class="'+(s.cancelled?"cx":"")+'"><b>'+esc(name)+"</b><br><small class=\"hint\">"+esc(dlabel(s.date))+(isPast?"":" · "+esc(timeText(s)))+"</small></div>"
+      +'<div class="right"><span class="'+(over?"over":"")+(s.cancelled?" cx":"")+'">'+hrs+(over?" ⚠":"")+'</span><button class="ghost" data-act="menu" data-id="'+s.id+'">⋯</button></div></div>';
+    if(openMenu===s.id){
+      html+='<div class="menu">';
+      if(!isPast){
+        html+='<button data-act="edit" data-id="'+s.id+'">✎ '+esc(t("edit"))+"</button>"
+          +'<button data-act="actual" data-id="'+s.id+'">⏱ '+esc(t("actual"))+"</button>"
+          +'<button data-act="cancel" data-id="'+s.id+'">'+(s.cancelled?"↩":"⊘")+" "+esc(t("cancelShift"))+"</button>";
+        if(!s.cancelled)html+='<button data-act="ics" data-id="'+s.id+'">📅 '+esc(t("cal"))+"</button>";
+      }
+      html+='<button class="d" data-act="del" data-id="'+s.id+'">✕ '+esc(t("del"))+"</button></div>";
+    }
+    html+="</div>";
+  });
+  $("list").innerHTML=html||'<div class="hint">'+esc(t("empty"))+"</div>";
+}
+
+function renderSetup(){
+  var step1=!S.lang,html="";
+  if(step1){
+    html+='<div class="grid">';
+    LANGS.forEach(function(l){html+='<button data-setlang="'+l[0]+'">'+esc(l[1])+"</button>"});
+    html+="</div>";
+  }else{
+    html+='<h2>'+esc(t("mode"))+"</h2>"
+      +'<button class="modeBtn" data-setmode="student">🎓 '+esc(t("student"))+"<small>"+esc(t("studentD"))+"</small></button>"
+      +'<button class="modeBtn" data-setmode="normal">📅 '+esc(t("normal"))+"<small>"+esc(t("normalD"))+"</small></button>";
+  }
+  $("setupIn").innerHTML=html;
+  $("setup").className="overlay"+((!S.lang||!S.mode)?" show":"");
+}
+
+var deferredInstall=null;
+function isIos(){return /iphone|ipad|ipod/i.test(navigator.userAgent)}
+function isStandalone(){return (window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true}
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();deferredInstall=e;renderSettings()});
+function renderSettings(){
+  var html="<h1>"+esc(t("settings"))+"</h1>";
+  html+="<h2>"+esc(t("lang"))+'</h2><div class="grid">';
+  LANGS.forEach(function(l){html+='<button data-setlang="'+l[0]+'" class="'+(S.lang===l[0]?"on":"")+'">'+esc(l[1])+"</button>"});
+  html+="</div><h2>"+esc(t("mode"))+"</h2>"
+    +'<button class="modeBtn'+(S.mode==="student"?" on":"")+'" data-setmode="student">🎓 '+esc(t("student"))+"<small>"+esc(t("studentD"))+"</small></button>"
+    +'<button class="modeBtn'+(S.mode==="normal"?" on":"")+'" data-setmode="normal">📅 '+esc(t("normal"))+"<small>"+esc(t("normalD"))+"</small></button>"
+    +"<h2>"+esc(t("weekStart"))+'</h2><div class="days">'+(function(){var o="",b=dayNum("2026-11-01");for(var i=0;i<7;i++)o+='<button data-wstart="'+i+'" class="'+(S.weekStart===i?"on":"")+'">'+esc(wd(b+i))+"</button>";return o})()+"</div>"
+    +'<button class="sec wide" id="remBtn" style="margin-top:6px">🔔 '+esc(t("remind"))+"</button>"
+    +(deferredInstall?'<button class="sec wide" id="instBtn" style="margin-top:6px">📲 '+esc(t("instApp"))+"</button>":(isIos()&&!isStandalone()?'<p class="hint">📲 '+esc(t("instIos"))+"</p>":""))
+    +(isStudent()?'<div class="notice" style="margin-top:12px">'+esc(t("notice"))+"</div>":"")
+    +'<p class="hint">'+esc(t("local"))+"</p>"
+    +'<button class="wide" id="clearBtn" style="background:#4a2227;margin-top:10px">'+esc(t("clear"))+"</button>"
+    +'<button class="wide doneBtn" id="closeSet" style="margin-top:18px">✓ '+esc(t("done"))+"</button>";
+  $("settingsIn").innerHTML=html;
+}
+
+function render(){
+  renderLabels();
+  var stu=isStudent();
+  $("counterCard").style.display=stu?"":"none";
+  if(stu){
+    var today=dayNum(todayStr());
+    var w0=weekStartOf(today),w1=w0+7;
+    var past=rangeTotal(w0,w0+6);
+    var next=rangeTotal(w1,w1+6);
+    $("last7Lbl").textContent=t("thisWeek")+" · "+wd(w0)+" "+md(w0)+" – "+wd(w0+6)+" "+md(w0+6);
+    $("next7Lbl").textContent=t("nextWeek")+" · "+wd(w1)+" "+md(w1)+" – "+wd(w1+6)+" "+md(w1+6);
+    $("rollWarn").textContent=rollingOver()?t("rolling"):"";
+    $("vac").checked=!!S.vac;
+    $("limitText").textContent="≤ "+limit()+"h"+(S.vac?" · ≤ 8h/d":"");
+    $("past").textContent=fmt(past);$("next").textContent=fmt(next);
+    setBar("pastBar",past);setBar("nextBar",next);
+    setLeft("pastLeft",past);setLeft("nextLeft",next);
+  }
+  renderWeek();renderList();
+  var names=[];
+  S.shifts.forEach(function(s){if(s.fixed==null&&s.job&&names.indexOf(s.job)<0)names.push(s.job)});
+  $("jobs").innerHTML=names.map(function(n){return '<option value="'+esc(n)+'">'}).join("");
+  $("secondBtn").style.display=editId!==null?"none":"";
+  $("secondBox").style.display=(secondOpen&&editId===null)?"":"none";
+  renderSetup();renderSettings();renderAppts();renderTasks();
+}
+
+function weekStartOf(dn){var dow=new Date(dn*86400000).getUTCDay();return dn-((dow-S.weekStart+7)%7)}
+function rangeTotal(a,b){return S.shifts.filter(function(s){var n=dayNum(s.date);return n>=a&&n<=b}).reduce(function(x,s){return x+hours(s)},0)}
+function rollingOver(){
+  return S.shifts.some(function(s){
+    if(s.cancelled)return false;
+    var n=dayNum(s.date);
+    return windowTotal(n)>limit()||(S.vac&&dayHours(n)>8);
+  });
+}
+function isOff(ds){return S.off.indexOf(ds)>=0}
+function setOff(ds,on){var i=S.off.indexOf(ds);if(on&&i<0)S.off.push(ds);if(!on&&i>=0)S.off.splice(i,1)}
+function hasWork(ds){return S.shifts.some(function(s){return s.date===ds&&!s.cancelled})}
+function flashBtn(){
+  var b=$("addBtn");
+  b.style.background="var(--ok)";b.style.color="#0b1a12";b.textContent="✓ "+t("added");
+  setTimeout(function(){b.style.background="";b.style.color="";renderLabels()},1500);
+}
+function nextDate(dateStr){return dateOfDay(dayNum(dateStr)+1)}
+
+var TIN_JS='type="text" inputmode="numeric" class="tin" maxlength="5" autocomplete="off" placeholder="18:00"';
+function toAscii(s){return String(s==null?"":s).replace(/[０-９]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-65248)}).replace(/[：]/g,":")}
+function normTime(s){
+  s=toAscii(s).trim();var hh,mm,mt=s.match(/^(\d{1,2})[:.](\d{1,2})$/);
+  if(mt){hh=+mt[1];mm=+mt[2]}
+  else{
+    var d=s.replace(/\D/g,"");
+    if(!d||d.length>4)return "";
+    if(d.length<=2){hh=+d;mm=0}
+    else if(d.length===3){hh=+d.slice(0,1);mm=+d.slice(1)}
+    else{hh=+d.slice(0,2);mm=+d.slice(2)}
+  }
+  if(hh===24&&mm===0)hh=0;
+  if(hh>23||mm>59)return "";
+  return pad(hh)+":"+pad(mm);
+}
+function tval(id){return normTime($(id).value)}
+function isTin(el){return el&&el.classList&&el.classList.contains("tin")}
+document.addEventListener("input",function(e){
+  if(!isTin(e.target))return;
+  var d=toAscii(e.target.value).replace(/\D/g,"").slice(0,4);
+  e.target.value=d.length===4?d.slice(0,2)+":"+d.slice(2):d;
+});
+document.addEventListener("focusin",function(e){
+  var el=e.target;
+  if(!isTin(el))return;
+  el.setAttribute("data-old",el.value);
+  if(el.value)el.placeholder=el.value;
+  el.value="";
+});
+document.addEventListener("focusout",function(e){
+  var el=e.target;
+  if(!isTin(el))return;
+  el.placeholder="18:00";
+  if(el.getAttribute("data-f")!=null)return;
+  el.value=el.value.trim()===""?(el.getAttribute("data-old")||""):normTime(el.value);
+});
+function clearTimes(){$("start").value="00:00";$("end").value="00:00"}
+function resetForm(){
+  editId=null;clearTimes();
+  $("cancelEdit").style.display="none";
+}
+
+$("btnSettings").onclick=function(){$("settings").className="overlay show"};
+document.addEventListener("click",function(e){
+  var el=e.target;
+  var sl=el.getAttribute&&el.getAttribute("data-setlang");
+  if(sl){S.lang=sl;save();render();return}
+  var ws=el.getAttribute&&el.getAttribute("data-wstart");
+  if(ws!=null&&ws!==""){S.weekStart=Number(ws);save();render();return}
+  var sm=el.getAttribute&&el.getAttribute("data-setmode");
+  if(sm){S.mode=sm;save();render();return}
+  if(el.id==="instBtn"&&deferredInstall){deferredInstall.prompt();deferredInstall=null;renderSettings();return}
+  if(el.id==="closeSet"){$("settings").className="overlay";return}
+  if(el.id==="remBtn"){
+    if(!("Notification" in window)){alert("Not supported / 📅");return}
+    Notification.requestPermission().then(function(p){alert(p==="granted"?t("ok"):"×")});
+    return;
+  }
+  if(el.id==="clearBtn"){
+    if(confirm(t("clearQ"))){
+      try{localStorage.removeItem(SKEY);localStorage.removeItem("shifts_v2");localStorage.removeItem("vac_v1")}catch(x){}
+      S={lang:null,mode:null,vac:false,job1:"",job2:"",shifts:[],off:[],appts:[],notes:"",tasks:[],weekStart:1};
+      $("settings").className="overlay";
+      editId=null;openMenu=null;secondOpen=false;apEditId=null;$("notepad").value="";showTab("shifts");
+      $("job").value="";$("start").value="";$("end").value="";$("job2").value="";$("start2").value="";$("end2").value="";
+      msg("");
+      render();
+    }
+  }
+});
+
+$("vac").onchange=function(){S.vac=this.checked;save();render()};
+
+$("secondBtn").onclick=function(){
+  secondOpen=!secondOpen;
+  if(secondOpen&&!$("job2").value)$("job2").value=S.job2||"";
+  render();
+};
+$("skipDay").onclick=function(){
+  var d=$("date").value||todayStr();
+  if(hasWork(d)){msg(t("hasShift"),true);return}
+  setOff(d,true);
+  $("date").value=nextDate(d);
+  save();render();
+  msg("✓ "+t("dayoff")+" · "+dlabel(d));
+};
+
+$("addBtn").onclick=function(){
+  var job=$("job").value.trim(),date=$("date").value,st=tval("start"),en=tval("end");
+  if(!date||!st||!en||st===en){msg(t("fill"),true);return}
+  if(editId!==null){
+    var s=S.shifts.filter(function(x){return x.id===editId})[0];
+    if(s){s.job=job;s.date=date;s.start=st;s.end=en;s.notified=false;delete s.aStart;delete s.aEnd;setOff(date,false)}
+    resetForm();flashDates=[date];save();render();flashDates=[];flashBtn();msg(t("added")+" · "+dlabel(date));
+    return;
+  }
+  var j2="",s2="",e2="",useSecond=false;
+  if(secondOpen){
+    j2=$("job2").value.trim();
+    var rs=$("start2").value.trim(),re=$("end2").value.trim();
+    s2=normTime(rs);e2=normTime(re);
+    if(((rs||re)&&!(s2&&e2))||(s2&&s2===e2)){msg(t("fill"),true);return}
+    useSecond=!!(s2&&e2);
+  }
+  var base=Date.now();
+  S.shifts.push({id:base,job:job,slot:1,date:date,start:st,end:en});
+  setOff(date,false);
+  S.job1=job;
+  if(useSecond){S.shifts.push({id:base+1,job:j2,slot:2,date:date,start:s2,end:e2});S.job2=j2}
+  secondOpen=false;
+  $("start2").value="";$("end2").value="";
+  $("date").value=nextDate(date);
+  clearTimes();
+  flashDates=[date];
+  save();render();flashDates=[];
+  flashBtn();
+  msg(t("added")+" · "+dlabel(date));
+};
+$("cancelEdit").onclick=function(){
+  resetForm();$("job").value=S.job1||"";msg("");render();
+};
+
+$("pBtn").onclick=function(){
+  var date=$("pDate").value,h=parseFloat($("pHours").value);
+  if(!date||isNaN(h)||h<0||h>24)return;
+  S.shifts.push({id:Date.now(),job:"-",date:date,fixed:h});
+  $("pHours").value="";
+  save();render();
+};
+
+function icsTime(dateStr,timeStr,addDay){
+  var d=new Date(dateStr+"T"+timeStr+":00");
+  if(addDay)d.setDate(d.getDate()+1);
+  return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"T"+pad(d.getHours())+pad(d.getMinutes())+"00";
+}
+function downloadIcs(s){
+  var over=s.end<=s.start,nm=String(jobName(s)).replace(/[,;\\\r\n]/g," ");
+  var txt="BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//ShiftKeeper//EN\r\nBEGIN:VEVENT\r\nUID:"+s.id+"@shiftkeeper\r\nDTSTAMP:"+icsTime(todayStr(),"00:00",false)
+    +"\r\nDTSTART:"+icsTime(s.date,s.start,false)+"\r\nDTEND:"+icsTime(s.date,s.end,over)
+    +"\r\nSUMMARY:"+nm+"\r\nBEGIN:VALARM\r\nTRIGGER:-PT30M\r\nACTION:DISPLAY\r\nDESCRIPTION:"+nm+" - 30 min\r\nEND:VALARM\r\nEND:VEVENT\r\nEND:VCALENDAR";
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([txt],{type:"text/calendar"}));
+  a.download="shift.ics";a.click();
+}
+
+$("list").onclick=function(e){
+  var act=e.target.getAttribute("data-act"),id=e.target.getAttribute("data-id");
+  if(!act)return;
+  var s=S.shifts.filter(function(x){return String(x.id)===id})[0];
+  if(!s)return;
+  if(act==="menu"){openMenu=(openMenu===s.id)?null:s.id;render();return}
+  if(act==="del"){S.shifts=S.shifts.filter(function(x){return x!==s});openMenu=null}
+  else if(act==="ics"){downloadIcs(s);return}
+  else if(act==="cancel"){s.cancelled=!s.cancelled}
+  else if(act==="edit"){
+    editId=s.id;openMenu=null;secondOpen=false;
+    $("job").value=s.job;$("date").value=s.date;$("start").value=s.start;$("end").value=s.end;
+    $("cancelEdit").style.display="";
+    render();window.scrollTo(0,0);return;
+  }
+  else if(act==="actual"){
+    var cur=s.aStart?s.aStart+"-"+s.aEnd:s.start+"-"+s.end;
+    var v=prompt(t("actualPrompt"),cur);
+    if(v===null)return;
+    v=v.trim();
+    if(v===""){delete s.aStart;delete s.aEnd}
+    else{
+      var m=v.match(/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
+      if(!m){alert(t("actualPrompt"));return}
+      s.aStart=pad(Number(m[1]))+":"+m[2];s.aEnd=pad(Number(m[3]))+":"+m[4];
+    }
+  }
+  save();render();
+};
+
+var dayEdit=null;
+function findShift(id){return S.shifts.filter(function(x){return String(x.id)===String(id)})[0]}
+function renderDay(){
+  var ov=$("daySheet");
+  if(!dayEdit){ov.className="overlay";return}
+  var list=S.shifts.filter(function(s){return s.date===dayEdit}).sort(sortShifts);
+  var html='<h1 style="margin-bottom:12px"'+(isRedDay(dayNum(dayEdit))?' class="rd"':"")+">"+esc(dlabel(dayEdit))+(isHoliday(dayNum(dayEdit))?" 🎌":"")+"</h1>";
+  if(!hasWork(dayEdit))html+='<button class="'+(isOff(dayEdit)?"":"sec ")+'wide" data-dact="off" style="margin-bottom:12px">'+(isOff(dayEdit)?"✓ ":"")+"🌴 "+esc(t("dayoff"))+"</button>";
+  list.forEach(function(s){
+    var past=s.fixed!=null;
+    html+='<div class="card"'+(s.cancelled?' style="opacity:.6"':"")+">";
+    if(past){
+      html+='<div class="row"><b style="flex:1;align-self:center">'+esc(t("pastHours"))+'</b><input type="number" step="0.5" min="0" max="24" value="'+s.fixed+'" data-f="fixed" data-id="'+s.id+'"></div>';
+    }else{
+      html+='<div class="row"><input type="text" value="'+esc(s.job||"")+'" placeholder="'+esc(jobName(s))+'" data-f="job" data-id="'+s.id+'"></div>'
+        +'<div class="row"><input '+TIN_JS+' value="'+s.start+'" data-f="start" data-id="'+s.id+'"><input '+TIN_JS+' value="'+s.end+'" data-f="end" data-id="'+s.id+'"></div>';
+    }
+    html+='<div class="menu" style="margin-top:0">';
+    if(!past){
+      html+='<button data-dact="cancel" data-id="'+s.id+'">'+(s.cancelled?"↩":"⊘")+" "+esc(t("cancelShift"))+"</button>";
+      if(!s.cancelled)html+='<button data-dact="ics" data-id="'+s.id+'">📅 '+esc(t("cal"))+"</button>";
+    }
+    html+='<button class="d" data-dact="del" data-id="'+s.id+'">✕ '+esc(t("del"))+"</button>";
+    if(isStudent())html+='<span class="hint" style="align-self:center">'+fmt(hours(s))+"</span>";
+    html+="</div></div>";
+  });
+  html+='<div class="card"><b>+ '+esc(t("add"))+'</b><div class="row" style="margin-top:8px"><input type="text" id="dJob" value="'+esc(S.job1||"")+'" placeholder="'+esc(t("job"))+'"></div>'
+    +'<div class="row"><input '+TIN_JS+' id="dStart" value="00:00"><input '+TIN_JS+' id="dEnd" value="00:00"></div>'
+    +'<button class="sec wide" id="dAddBtn" data-dact="add">'+esc(t("add"))+"</button></div>"
+    +'<button class="wide doneBtn" data-dact="close">✓ '+esc(t("done"))+"</button>";
+  $("dayIn").innerHTML=html;
+  ov.className="overlay show";
+}
+$("week").addEventListener("click",function(e){
+  var tr=e.target.closest?e.target.closest("[data-tree]"):null;
+  if(tr){var td=tr.getAttribute("data-tree");setOff(td,!isOff(td));save();render();return}
+  var el=e.target.closest?e.target.closest("[data-day]"):null;
+  if(!el)return;
+  dayEdit=el.getAttribute("data-day");renderDay();
+});
+function updateDayAdd(){
+  var s=$("dStart"),e=$("dEnd"),b=$("dAddBtn");
+  if(!s||!e||!b)return;
+  var sv=normTime(s.value),ev=normTime(e.value),ok=sv&&ev&&sv!==ev;
+  b.className=(ok?"":"sec ")+"wide";
+}
+$("dayIn").addEventListener("input",function(e){if(e.target.id==="dStart"||e.target.id==="dEnd")updateDayAdd()});
+$("dayIn").addEventListener("change",function(e){
+  if(e.target.id==="dStart"||e.target.id==="dEnd"){updateDayAdd();return}
+  var f=e.target.getAttribute("data-f");if(!f)return;
+  var s=findShift(e.target.getAttribute("data-id"));if(!s)return;
+  if(f==="job"){s.job=e.target.value.trim()}
+  else if(f==="fixed"){
+    var hv=parseFloat(e.target.value);
+    if(isNaN(hv)||hv<0||hv>24){renderDay();return}
+    s.fixed=hv;
+  }else{return}
+  save();render();
+});
+$("dayIn").addEventListener("focusout",function(e){
+  var el=e.target,f=el.getAttribute&&el.getAttribute("data-f");
+  if(f!=="start"&&f!=="end")return;
+  var s=findShift(el.getAttribute("data-id"));if(!s)return;
+  var raw=el.value.trim();
+  if(raw===""){el.value=s[f];return}
+  var v=normTime(raw),other=f==="start"?s.end:s.start;
+  if(!v||v===other){alert(t("fill"));renderDay();return}
+  if(v===s[f]){el.value=v;return}
+  s[f]=v;delete s.aStart;delete s.aEnd;s.notified=false;el.value=v;
+  save();render();
+});
+$("dayIn").addEventListener("click",function(e){
+  var a=e.target.getAttribute("data-dact");if(!a)return;
+  if(a==="close"){dayEdit=null;renderDay();return}
+  if(a==="off"){setOff(dayEdit,!isOff(dayEdit));save();render();renderDay();return}
+  if(a==="add"){
+    var j=$("dJob").value.trim(),st=tval("dStart"),en=tval("dEnd");
+    if(!st||!en||st===en){alert(t("fill"));return}
+    S.shifts.push({id:Date.now(),job:j,slot:1,date:dayEdit,start:st,end:en});
+    setOff(dayEdit,false);
+    flashDates=[dayEdit];save();render();flashDates=[];renderDay();return;
+  }
+  var s=findShift(e.target.getAttribute("data-id"));if(!s)return;
+  if(a==="ics"){downloadIcs(s);return}
+  if(a==="cancel")s.cancelled=!s.cancelled;
+  if(a==="del")S.shifts=S.shifts.filter(function(x){return x!==s});
+  save();render();renderDay();
+});
+
+function showTab(n){
+  curTab=n;
+  $("tabShifts").style.display=n==="shifts"?"":"none";
+  $("tabLog").style.display=n==="log"?"":"none";
+  $("tabSpecial").style.display=n==="special"?"":"none";
+  $("tabTasks").style.display=n==="tasks"?"":"none";
+  var bs=document.querySelectorAll(".tabbar button");
+  for(var i=0;i<bs.length;i++)bs[i].className=bs[i].getAttribute("data-tab")===n?"on":"";
+  window.scrollTo(0,0);
+}
+document.querySelector(".tabbar").addEventListener("click",function(e){
+  var b=e.target.closest?e.target.closest("[data-tab]"):null;
+  if(b)showTab(b.getAttribute("data-tab"));
+});
+
+function findAp(id){return S.appts.filter(function(x){return String(x.id)===String(id)})[0]}
+function renderAppts(){
+  var today=todayStr(),up=[],past=[];
+  S.appts.slice().sort(function(a,b){return (a.date+(a.time||"")).localeCompare(b.date+(b.time||""))}).forEach(function(a){(a.date>=today?up:past).push(a)});
+  past.reverse();
+  function row(a,old){
+    return '<div class="shift"><div class="top"><div class="'+(old?"cx":"")+'"><b>📌 '+esc(a.title)+'</b><br><small class="hint">'+esc(dlabel(a.date))+(a.time?" · "+esc(a.time):"")+(a.note?" · "+esc(a.note):"")+"</small></div>"
+      +'<div class="right"><button class="ghost" data-ap="edit" data-id="'+a.id+'">✎</button><button class="ghost" data-ap="ics" data-id="'+a.id+'">📅</button><button class="ghost" data-ap="del" data-id="'+a.id+'">✕</button></div></div></div>';
+  }
+  var html="";
+  up.forEach(function(a){html+=row(a,false)});
+  past.forEach(function(a){html+=row(a,true)});
+  $("apList").innerHTML=html||'<div class="hint">'+esc(t("apEmpty"))+"</div>";
+}
+function apMsg(text,err){var m=$("apMsg");m.textContent=text||"";m.className="msg"+(err?" err":"")}
+function apReset(){
+  apEditId=null;
+  $("apName").value="";$("apNote").value="";$("apTime").value="";$("apDate").value=todayStr();
+  $("apCancel").style.display="none";
+}
+$("apAddBtn").onclick=function(){
+  var title=$("apName").value.trim(),date=$("apDate").value,tm=normTime($("apTime").value),note=$("apNote").value.trim();
+  if(!title||!date){apMsg(t("apFill"),true);return}
+  if(apEditId!==null){
+    var a=findAp(apEditId);
+    if(a){a.title=title;a.date=date;a.time=tm;a.note=note;a.notified=false}
+  }else{
+    S.appts.push({id:Date.now(),title:title,date:date,time:tm,note:note});
+  }
+  apReset();save();render();
+  apMsg("✓ "+t("added")+" · "+dlabel(date));
+};
+$("apCancel").onclick=function(){apReset();apMsg("");render()};
+$("apList").onclick=function(e){
+  var act=e.target.getAttribute("data-ap");if(!act)return;
+  var a=findAp(e.target.getAttribute("data-id"));if(!a)return;
+  if(act==="del"){S.appts=S.appts.filter(function(x){return x!==a});if(apEditId===a.id)apReset()}
+  else if(act==="ics"){downloadApIcs(a);return}
+  else if(act==="edit"){
+    apEditId=a.id;
+    $("apName").value=a.title;$("apDate").value=a.date;$("apTime").value=a.time||"";$("apNote").value=a.note||"";
+    $("apCancel").style.display="";
+    apMsg("");render();window.scrollTo(0,0);return;
+  }
+  save();render();
+};
+function downloadApIcs(a){
+  var nm=String(a.title).replace(/[,;\\\r\n]/g," "),nt=String(a.note||"").replace(/[,;\\\r\n]/g," ");
+  var txt="BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//ShiftKeeper//EN\r\nBEGIN:VEVENT\r\nUID:ap"+a.id+"@shiftkeeper\r\nDTSTAMP:"+icsTime(todayStr(),"00:00",false);
+  if(a.time){
+    var m=parseT(a.time)+60;
+    txt+="\r\nDTSTART:"+icsTime(a.date,a.time,false)+"\r\nDTEND:"+icsTime(a.date,pad(Math.floor(m/60)%24)+":"+pad(m%60),m>=1440)
+      +"\r\nSUMMARY:"+nm+(nt?"\r\nDESCRIPTION:"+nt:"")+"\r\nBEGIN:VALARM\r\nTRIGGER:-PT30M\r\nACTION:DISPLAY\r\nDESCRIPTION:"+nm+" - 30 min\r\nEND:VALARM";
+  }else{
+    txt+="\r\nDTSTART;VALUE=DATE:"+a.date.replace(/-/g,"")+"\r\nDTEND;VALUE=DATE:"+nextDate(a.date).replace(/-/g,"")
+      +"\r\nSUMMARY:"+nm+(nt?"\r\nDESCRIPTION:"+nt:"")+"\r\nBEGIN:VALARM\r\nTRIGGER:PT9H\r\nACTION:DISPLAY\r\nDESCRIPTION:"+nm+"\r\nEND:VALARM";
+  }
+  txt+="\r\nEND:VEVENT\r\nEND:VCALENDAR";
+  var el=document.createElement("a");
+  el.href=URL.createObjectURL(new Blob([txt],{type:"text/calendar"}));
+  el.download="appointment.ics";el.click();
+}
+
+var noteTimer=null;
+$("notepad").addEventListener("input",function(){
+  S.notes=this.value;
+  clearTimeout(noteTimer);noteTimer=setTimeout(save,400);
+});
+$("notepad").addEventListener("blur",function(){S.notes=this.value;save()});
+
+function renderTasks(){
+  var html="";
+  S.tasks.forEach(function(k){
+    html+='<div class="tk'+(k.done?" dn":"")+'"><input type="checkbox" data-tk="chk" data-id="'+k.id+'"'+(k.done?" checked":"")+'><span>'+esc(k.text)+'</span><button class="ghost" data-tk="del" data-id="'+k.id+'">✕</button></div>';
+  });
+  $("tkList").innerHTML=html||'<div class="hint" style="padding:10px 0">'+esc(t("tkEmpty"))+"</div>";
+  $("tkReset").style.display=S.tasks.some(function(k){return k.done})?"":"none";
+}
+function addTask(){
+  var v=$("tkIn").value.trim();if(!v)return;
+  S.tasks.push({id:Date.now(),text:v,done:false});
+  $("tkIn").value="";save();renderTasks();
+}
+$("tkAdd").onclick=addTask;
+$("tkIn").addEventListener("keydown",function(e){if(e.key==="Enter")addTask()});
+$("tkReset").onclick=function(){S.tasks.forEach(function(k){k.done=false});save();renderTasks()};
+$("tkList").addEventListener("click",function(e){
+  var a=e.target.getAttribute("data-tk");if(!a)return;
+  var id=e.target.getAttribute("data-id");
+  if(a==="del")S.tasks=S.tasks.filter(function(k){return String(k.id)!==id});
+  else S.tasks.forEach(function(k){if(String(k.id)===id)k.done=e.target.checked});
+  save();renderTasks();
+});
+
+function updateHolidays(){
+  try{
+    if(!navigator.onLine||!window.fetch)return;
+    if(S.holAt&&Date.now()-S.holAt<7*86400000)return;
+    fetch("https://holidays-jp.github.io/api/v1/date.json").then(function(r){return r.json()}).then(function(j){
+      var by={},hol={};
+      Object.keys(j).forEach(function(d){if(/^\d{4}-\d{2}-\d{2}$/.test(d)){hol[d]=1;var y=d.slice(0,4);by[y]=(by[y]||0)+1}});
+      var ys=[];
+      Object.keys(by).forEach(function(y){if(by[y]>=10&&by[y]<=25)ys.push(Number(y))});
+      if(!ys.length)return;
+      S.hol=hol;S.holYears=ys;S.holAt=Date.now();save();render();
+    }).catch(function(){});
+  }catch(x){}
+}
+window.addEventListener("online",updateHolidays);
+
+function checkReminders(){
+  if(!("Notification" in window)||Notification.permission!=="granted")return;
+  var now=Date.now();
+  S.shifts.forEach(function(s){
+    if(s.cancelled||s.fixed!=null||!s.start)return;
+    var diff=new Date(s.date+"T"+s.start+":00").getTime()-now;
+    if(diff>0&&diff<=30*60000&&!s.notified){
+      s.notified=true;save();
+      try{new Notification(jobName(s)+" · "+Math.ceil(diff/60000)+" min",{body:s.start+"-"+s.end})}catch(e){}
+    }
+  });
+  S.appts.forEach(function(a){
+    if(!a.time||a.notified)return;
+    var diff=new Date(a.date+"T"+a.time+":00").getTime()-now;
+    if(diff>0&&diff<=30*60000){
+      a.notified=true;save();
+      try{new Notification("📌 "+a.title+" · "+Math.ceil(diff/60000)+" min",{body:a.time+(a.note?" · "+a.note:"")})}catch(e){}
+    }
+  });
+}
+setInterval(checkReminders,30000);
+
+$("date").value=todayStr();
+$("pDate").value=todayStr();
+$("job").value=S.job1||"";
+$("apDate").value=todayStr();
+$("notepad").value=S.notes||"";
+clearTimes();
+render();
+updateHolidays();
+if("serviceWorker" in navigator&&/^https?:/.test(location.protocol)){navigator.serviceWorker.register("sw.js").catch(function(){})}
+</script>
+</body>
+</html>
